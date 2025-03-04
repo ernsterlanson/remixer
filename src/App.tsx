@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { remixContent } from './api/claude'
+import axios from 'axios'
 import './App.css'
 
 function App() {
@@ -19,13 +19,51 @@ function App() {
     setError('')
     
     try {
-      const result = await remixContent(inputText, remixType)
-      setOutputText(result)
+      // Replace with your actual Claude API endpoint and key
+      const response = await axios.post(
+        'https://api.anthropic.com/v1/messages',
+        {
+          model: 'claude-3-sonnet-20240229',
+          max_tokens: 1000,
+          messages: [
+            {
+              role: 'user',
+              content: `${getPromptForRemixType(remixType)}: ${inputText}`
+            }
+          ]
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': import.meta.env.VITE_CLAUDE_API_KEY || 'your-api-key-here',
+            'anthropic-version': '2023-06-01'
+          }
+        }
+      )
+      
+      setOutputText(response.data.content[0].text)
     } catch (err) {
       console.error('Error remixing content:', err)
       setError('Failed to remix content. Please try again.')
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const getPromptForRemixType = (type: string) => {
+    switch (type) {
+      case 'summarize':
+        return 'Summarize this text concisely'
+      case 'elaborate':
+        return 'Elaborate on this text with more details'
+      case 'simplify':
+        return 'Simplify this text for a 5th grade reading level'
+      case 'professional':
+        return 'Rewrite this text in a professional tone'
+      case 'casual':
+        return 'Rewrite this text in a casual, friendly tone'
+      default:
+        return 'Summarize this text concisely'
     }
   }
 
