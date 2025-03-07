@@ -46,7 +46,7 @@ function App() {
         // The content field in Claude API response is an array of content blocks
         const contentBlocks = response.data.content;
         // Extract text from the first text block
-        const textContent = contentBlocks.find(block => block.type === 'text')?.text || '';
+        const textContent = contentBlocks.find((block: any) => block.type === 'text')?.text || '';
         setOutputText(textContent);
       } else {
         setError('Received an unexpected response format from the API');
@@ -84,6 +84,96 @@ function App() {
         return 'Summarize this text concisely'
     }
   }
+
+  // Function to format the remixed content with styled sections
+  const formatRemixedContent = () => {
+    if (!outputText) return null;
+    
+    // Split content by paragraphs or sections
+    const paragraphs = outputText.split(/\n\n+/);
+    
+    return (
+      <div className="remixed-content">
+        {paragraphs.map((paragraph, index) => {
+          // Check if paragraph is a heading (starts with # or ##)
+          const isHeading = /^#+\s/.test(paragraph);
+          
+          if (isHeading) {
+            // Extract heading level and text
+            const match = paragraph.match(/^(#+)\s(.+)$/);
+            if (match) {
+              const level = match[1].length;
+              const text = match[2];
+              
+              return (
+                <div key={index} className={`content-section heading-section level-${level}`}>
+                  <h2 className={`section-heading level-${level}`}>{text}</h2>
+                </div>
+              );
+            }
+          }
+          
+          // Check if paragraph is a bullet list
+          const isBulletList = paragraph.split('\n').some(line => /^[-*]\s/.test(line));
+          
+          if (isBulletList) {
+            const listItems = paragraph.split('\n');
+            return (
+              <div key={index} className="content-section list-section bullet-list">
+                <ul className="section-list">
+                  {listItems.map((item, itemIndex) => {
+                    // Remove the list marker (- or *) from the beginning
+                    const cleanItem = item.replace(/^[-*]\s/, '');
+                    return <li key={itemIndex} className="list-item">{cleanItem}</li>;
+                  })}
+                </ul>
+              </div>
+            );
+          }
+          
+          // Check if paragraph is a numbered list
+          const isNumberedList = paragraph.split('\n').some(line => /^\d+\.\s/.test(line));
+          
+          if (isNumberedList) {
+            const listItems = paragraph.split('\n');
+            return (
+              <div key={index} className="content-section list-section numbered-list">
+                <ol className="section-list">
+                  {listItems.map((item, itemIndex) => {
+                    // Remove the number and dot from the beginning
+                    const cleanItem = item.replace(/^\d+\.\s/, '');
+                    return <li key={itemIndex} className="list-item">{cleanItem}</li>;
+                  })}
+                </ol>
+              </div>
+            );
+          }
+          
+          // Check if paragraph is a code block
+          const isCodeBlock = paragraph.startsWith('```') && paragraph.endsWith('```');
+          
+          if (isCodeBlock) {
+            // Remove the backticks and extract the code
+            const code = paragraph.substring(3, paragraph.length - 3).trim();
+            return (
+              <div key={index} className="content-section code-section">
+                <pre className="code-block">
+                  <code>{code}</code>
+                </pre>
+              </div>
+            );
+          }
+          
+          // Regular paragraph or content
+          return (
+            <div key={index} className="content-section paragraph-section">
+              <p className="section-paragraph">{paragraph}</p>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-gray-100 p-4 md:p-8">
@@ -141,8 +231,8 @@ function App() {
         {outputText && (
           <div className="mt-6">
             <h2 className="text-lg font-medium text-gray-900 mb-2">Remixed Content:</h2>
-            <div className="p-4 bg-gray-50 border border-gray-200 rounded-md whitespace-pre-wrap">
-              {outputText}
+            <div className="p-4 bg-gray-50 border border-gray-200 rounded-md">
+              {formatRemixedContent()}
             </div>
           </div>
         )}
