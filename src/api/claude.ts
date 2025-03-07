@@ -1,9 +1,12 @@
 import axios from 'axios';
 
-// Types for Claude API request and response
+// Types for Claude API request and response based on the official SDK
 interface ClaudeMessage {
   role: 'user' | 'assistant';
-  content: string;
+  content: string | Array<{
+    type: 'text';
+    text: string;
+  }>;
 }
 
 interface ClaudeRequest {
@@ -13,10 +16,26 @@ interface ClaudeRequest {
 }
 
 interface ClaudeResponse {
+  id: string;
+  type: string;
+  role: string;
   content: Array<{
     type: string;
     text: string;
   }>;
+  model: string;
+  stop_reason: string;
+  stop_sequence: string | null;
+  usage: {
+    input_tokens: number;
+    output_tokens: number;
+  };
+}
+
+// Types for Claude API response
+interface ClaudeResponseContent {
+  type: string;
+  text: string;
 }
 
 // Function to remix content using Claude API
@@ -27,28 +46,27 @@ export async function remixContent(
   try {
     const prompt = getPromptForRemixType(remixType);
     
+    // Use our backend server endpoint
     const response = await axios.post<ClaudeResponse>(
-      'https://api.anthropic.com/v1/messages',
+      '/api/remix',
       {
-        model: 'claude-3-sonnet-20240229',
-        max_tokens: 1000,
+        model: 'claude-3-7-sonnet-20250219',
+        max_tokens: 1024,
         messages: [
           {
             role: 'user',
             content: `${prompt}: ${text}`
           }
         ]
-      },
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': import.meta.env.VITE_CLAUDE_API_KEY || '',
-          'anthropic-version': '2023-06-01'
-        }
       }
     );
     
-    return response.data.content[0].text;
+    // Extract text from the response
+    if (response.data.content && response.data.content.length > 0) {
+      return response.data.content[0].text;
+    }
+    
+    return 'No response generated';
   } catch (error) {
     console.error('Error remixing content:', error);
     throw new Error('Failed to remix content. Please try again.');

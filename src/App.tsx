@@ -2,6 +2,9 @@ import { useState } from 'react'
 import axios from 'axios'
 import './App.css'
 
+// API base URL - use environment variable or default to localhost:3001
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
+
 function App() {
   const [inputText, setInputText] = useState('')
   const [outputText, setOutputText] = useState('')
@@ -19,32 +22,47 @@ function App() {
     setError('')
     
     try {
-      // Replace with your actual Claude API endpoint and key
-      const response = await axios.post(
-        'https://api.anthropic.com/v1/messages',
-        {
-          model: 'claude-3-sonnet-20240229',
-          max_tokens: 1000,
-          messages: [
-            {
-              role: 'user',
-              content: `${getPromptForRemixType(remixType)}: ${inputText}`
-            }
-          ]
-        },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'x-api-key': import.meta.env.VITE_CLAUDE_API_KEY || 'your-api-key-here',
-            'anthropic-version': '2023-06-01'
+      // Create a request that matches Claude API expectations
+      const requestBody = {
+        model: 'claude-3-7-sonnet-20250219',
+        max_tokens: 1024,
+        messages: [
+          {
+            role: 'user',
+            content: `${getPromptForRemixType(remixType)}: ${inputText}`
           }
-        }
-      )
+        ]
+      };
       
-      setOutputText(response.data.content[0].text)
+      console.log('Sending request:', requestBody);
+      
+      // Use our backend server endpoint
+      const response = await axios.post(`${API_BASE_URL}/api/remix`, requestBody);
+      
+      console.log('Response received:', response.data);
+      
+      // Handle Claude API response format
+      if (response.data && response.data.content) {
+        // The content field in Claude API response is an array of content blocks
+        const contentBlocks = response.data.content;
+        // Extract text from the first text block
+        const textContent = contentBlocks.find(block => block.type === 'text')?.text || '';
+        setOutputText(textContent);
+      } else {
+        setError('Received an unexpected response format from the API');
+        console.error('Unexpected response format:', response.data);
+      }
     } catch (err) {
-      console.error('Error remixing content:', err)
-      setError('Failed to remix content. Please try again.')
+      console.error('Error remixing content:', err);
+      
+      // More detailed error handling
+      if (axios.isAxiosError(err) && err.response) {
+        const errorMessage = err.response.data?.error || 'Failed to remix content';
+        setError(`Error: ${errorMessage}`);
+        console.error('Error response:', err.response.data);
+      } else {
+        setError('Failed to remix content. Please try again.');
+      }
     } finally {
       setIsLoading(false)
     }
