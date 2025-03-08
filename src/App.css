@@ -184,6 +184,7 @@ body {
   flex-direction: column;
   justify-content: space-between;
   text-align: left;
+  position: relative;
 }
 
 .tweet-card:hover {
@@ -191,11 +192,36 @@ body {
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
-.tweet-card p {
+.tweet-card textarea {
   font-size: 1rem;
   line-height: 1.5;
   margin-bottom: 1rem;
   flex-grow: 1;
+  min-height: 100px;
+  max-height: 200px;
+  font-family: inherit;
+  overflow-y: auto;
+  resize: vertical;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e0 #f8fafc;
+}
+
+.tweet-card textarea::-webkit-scrollbar {
+  width: 6px;
+}
+
+.tweet-card textarea::-webkit-scrollbar-track {
+  background: #f8fafc;
+  border-radius: 3px;
+}
+
+.tweet-card textarea::-webkit-scrollbar-thumb {
+  background-color: #cbd5e0;
+  border-radius: 3px;
+}
+
+.tweet-card textarea:focus {
+  outline: none;
 }
 
 .tweet-card button {
@@ -206,11 +232,58 @@ body {
   align-items: center;
 }
 
-.tweet-card button:hover {
+.tweet-card button:hover:not(:disabled) {
   background-color: rgba(0, 0, 0, 0.05);
   color: #000;
 }
 
+.tweet-card button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .tweet-card button svg {
   margin-right: 0.25rem;
+}
+
+/* Modal Styling */
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fixed {
+  animation: modalFadeIn 0.3s ease-out;
+}
+
+.fixed .bg-white {
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+.fixed textarea {
+  min-height: 150px;
+  font-size: 1.1rem;
+  line-height: 1.6;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e0 #f8fafc;
+}
+
+.fixed textarea::-webkit-scrollbar {
+  width: 8px;
+}
+
+.fixed textarea::-webkit-scrollbar-track {
+  background: #f8fafc;
+  border-radius: 4px;
+}
+
+.fixed textarea::-webkit-scrollbar-thumb {
+  background-color: #cbd5e0;
+  border-radius: 4px;
 }
